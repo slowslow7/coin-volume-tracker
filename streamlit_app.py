@@ -80,15 +80,15 @@ def get_upbit_volume_data(market_codes, market_names):
                     progress = (i + 1) / total
                     st.progress(progress, text=f"거래량 데이터 수집 중... ({i+1}/{total})")
                     
-                    # 현재 24시간 거래량
-                    today_volume = ticker.get('acc_trade_volume_24h', 0)
+                    # 현재 24시간 거래량 (소수점 제거)
+                    today_volume = int(ticker.get('acc_trade_volume_24h', 0))
                     
-                    # 어제 거래량 조회 (일봉 API 사용)
-                    yesterday_volume = get_yesterday_volume(market)
+                    # 어제 거래량 조회 (일봉 API 사용, 소수점 제거)
+                    yesterday_volume = int(get_yesterday_volume(market))
                     
-                    # 거래량 변화율 계산
+                    # 거래량 변화율 계산 (소수점 1자리 반올림)
                     if yesterday_volume > 0:
-                        volume_change_rate = ((today_volume - yesterday_volume) / yesterday_volume) * 100
+                        volume_change_rate = round(((today_volume - yesterday_volume) / yesterday_volume) * 100, 1)
                     else:
                         volume_change_rate = 0
                     
@@ -198,6 +198,12 @@ if sorted_data:
         df_top10 = df_top10[['korean_name', 'market', 'trade_price', 'signed_change_rate', 'today_volume', 'yesterday_volume', 'volume_change_rate']]
         df_top10.columns = ['코인명', '마켓', '현재가', '가격변동률 (%)', '오늘 거래량', '어제 거래량', '거래량 변화율 (%)']
         
+        # 데이터 형식 지정 (소수점 조정)
+        df_top10['가격변동률 (%)'] = df_top10['가격변동률 (%)'].round(1)
+        df_top10['오늘 거래량'] = df_top10['오늘 거래량'].astype(int)
+        df_top10['어제 거래량'] = df_top10['어제 거래량'].astype(int)
+        df_top10['거래량 변화율 (%)'] = df_top10['거래량 변화율 (%)'].round(1)
+        
         # 데이터 표시
         st.dataframe(df_top10, use_container_width=True)
     
@@ -208,6 +214,12 @@ if sorted_data:
         # 열 선택 및 이름 변경
         df = df[['market', 'korean_name', 'trade_price', 'signed_change_rate', 'today_volume', 'yesterday_volume', 'volume_change_rate']]
         df.columns = ['마켓', '코인명', '현재가', '가격변동률 (%)', '오늘 거래량', '어제 거래량', '거래량 변화율 (%)']
+        
+        # 데이터 형식 지정 (소수점 조정)
+        df['가격변동률 (%)'] = df['가격변동률 (%)'].round(1)
+        df['오늘 거래량'] = df['오늘 거래량'].astype(int)
+        df['어제 거래량'] = df['어제 거래량'].astype(int)
+        df['거래량 변화율 (%)'] = df['거래량 변화율 (%)'].round(1)
         
         # 기본 데이터프레임 표시
         st.dataframe(df, use_container_width=True, height=600)
