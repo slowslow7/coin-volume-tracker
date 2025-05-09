@@ -178,17 +178,57 @@ if sorted_data:
     tab1, tab2 = st.tabs(["차트 보기", "데이터 보기"])
     
     with tab1:
-        # 상위 10개 코인 (변화율 기준 정렬 유지)
+        # 상위 10개 코인 (변화율 기준 정렬)
         top10 = sorted(sorted_data[:10], key=lambda x: abs(x['volume_change_rate']), reverse=True)
         
-        # 차트 데이터 준비 (정렬된 상태 유지)
-        chart_data = pd.DataFrame({
-            '코인명': [item['korean_name'] for item in top10],
-            '거래량 변화율': [item['volume_change_rate'] for item in top10]
-        })
+        # 차트 데이터 준비 - 순서 강제 지정을 위한 방법
+        chart_coins = [item['korean_name'] for item in top10]
+        chart_values = [item['volume_change_rate'] for item in top10]
         
-        # 차트 생성 (인덱스 설정으로 순서 유지)
-        chart = st.bar_chart(chart_data.set_index('코인명'))
+        # 순서대로 정렬된 데이터 생성 (역순으로 하여 큰 값이 왼쪽에 오도록)
+        chart_data = pd.DataFrame({
+            '거래량 변화율': chart_values
+        }, index=chart_coins[::-1])  # 역순으로 인덱스 설정
+        
+        # 차트 생성 (가로 막대 차트로 표시하여 순서 조정)
+        st.write("### 거래량 변화율 상위 10개 코인")
+        st.bar_chart(chart_data, use_container_width=True)
+        
+        # 변경: 세로 막대 차트로 표시
+        # 직접 Matplotlib 차트 생성
+        import matplotlib.pyplot as plt
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # 인덱스 순서 조정 (큰 값이 왼쪽에 오도록)
+        sorted_indices = sorted(range(len(chart_values)), key=lambda i: abs(chart_values[i]), reverse=True)
+        sorted_coins = [chart_coins[i] for i in sorted_indices]
+        sorted_values = [chart_values[i] for i in sorted_indices]
+        
+        # 색상 설정 (양수/음수에 따라)
+        colors = ['#ff4b4b' if val > 0 else '#4b4bff' for val in sorted_values]
+        
+        # 막대 그래프 생성
+        bars = ax.bar(range(len(sorted_coins)), [abs(val) for val in sorted_values], color=colors)
+        
+        # 축 설정
+        ax.set_xticks(range(len(sorted_coins)))
+        ax.set_xticklabels(sorted_coins, rotation=45, ha='right')
+        ax.set_ylabel('거래량 변화율 (%)')
+        ax.set_title('거래량 변화율 상위 10개 코인')
+        
+        # 값 표시
+        for i, bar in enumerate(bars):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + 5,
+                    f'{sorted_values[i]:.1f}%',
+                    ha='center', va='bottom', rotation=0)
+        
+        # 여백 조정
+        plt.tight_layout()
+        
+        # Streamlit에 표시
+        st.pyplot(fig)
         
         # 추가 정보 제공
         st.subheader("상위 10개 코인 상세 정보")
