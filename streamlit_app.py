@@ -178,17 +178,17 @@ if sorted_data:
     tab1, tab2 = st.tabs(["차트 보기", "데이터 보기"])
     
     with tab1:
-        # 상위 10개 코인
-        top10 = sorted_data[:10]
+        # 상위 10개 코인 (변화율 기준 정렬 유지)
+        top10 = sorted(sorted_data[:10], key=lambda x: abs(x['volume_change_rate']), reverse=True)
         
-        # 차트 데이터 준비
+        # 차트 데이터 준비 (정렬된 상태 유지)
         chart_data = pd.DataFrame({
             '코인명': [item['korean_name'] for item in top10],
             '거래량 변화율': [item['volume_change_rate'] for item in top10]
         })
         
-        # 차트 생성
-        st.bar_chart(chart_data.set_index('코인명'))
+        # 차트 생성 (인덱스 설정으로 순서 유지)
+        chart = st.bar_chart(chart_data.set_index('코인명'))
         
         # 추가 정보 제공
         st.subheader("상위 10개 코인 상세 정보")
@@ -204,8 +204,14 @@ if sorted_data:
         df_top10['어제 거래량'] = df_top10['어제 거래량'].astype(int)
         df_top10['거래량 변화율 (%)'] = df_top10['거래량 변화율 (%)'].round(1)
         
-        # 데이터 표시
-        st.dataframe(df_top10, use_container_width=True)
+        # 표 떨림 방지를 위해 고정 너비 컨테이너에 표시
+        st.container()
+        st.dataframe(
+            df_top10,
+            use_container_width=True,
+            height=400,  # 높이 고정
+            hide_index=True  # 인덱스 숨김
+        )
     
     with tab2:
         # 테이블용 데이터프레임 생성
@@ -221,8 +227,14 @@ if sorted_data:
         df['어제 거래량'] = df['어제 거래량'].astype(int)
         df['거래량 변화율 (%)'] = df['거래량 변화율 (%)'].round(1)
         
-        # 기본 데이터프레임 표시
-        st.dataframe(df, use_container_width=True, height=600)
+        # 기본 데이터프레임 표시 (표 떨림 방지)
+        st.container()
+        st.dataframe(
+            df,
+            use_container_width=True,
+            height=600,
+            hide_index=True  # 인덱스 숨김
+        )
         
         # CSV 다운로드 버튼
         csv = df.to_csv(index=False).encode('utf-8')
